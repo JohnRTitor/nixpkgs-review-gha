@@ -23,6 +23,10 @@ on:
         required: true
         type: boolean
         default: true
+      pkgs-to-build:
+        description: "Packages to build"
+        required: false
+        type: string
       local-eval:
         description: "Force local eval"
         required: true
@@ -51,6 +55,8 @@ on:
 
 jobs:
   review:
+    env:
+      PKGS_TO_BUILD: "${{ inputs.pkgs-to-build }}"
     strategy:
       fail-fast: false
       matrix:
@@ -132,8 +138,14 @@ jobs:
 
       - name: run nixpkgs-review
         run: |
+          PKG_ARGS=""
+          for PKG in $PKGS_TO_BUILD; do
+            PKG_ARGS+=" --package $PKG"
+          done
+
           nixpkgs-review -- \
             pr ${{ inputs.pr }} \
+            $PKG_ARGS \
             --eval ${{ inputs.local-eval && 'local' || 'auto' }} \
             --no-shell \
             --no-headers \
